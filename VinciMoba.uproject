@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{36E6331A-4C7B-0EE0-66B0-83BD857A7551}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "VinciMoba",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
