@@ -2,11 +2,16 @@
 
 #include "VinciMoba.h"
 #include "VinciMobaGameMode.h"
-#include "VinciMobaPawn.h"
+#include "GameFramework/GameState.h"
+
 
 AVinciMobaGameMode::AVinciMobaGameMode()
 {
-	// set default pawn class to our character class
-	DefaultPawnClass = AVinciMobaPawn::StaticClass();
+
+}
+
+void AVinciMobaGameMode::StartPlay()
+{
+	Super::StartPlay();
 }
 
