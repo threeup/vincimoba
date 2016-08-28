@@ -4,6 +4,7 @@
 #include "VinciState.h"
 #include "Builder.h"
 #include "Lane.h"
+#include "VinciLib.h"
 #include "VinciMobaGameMode.h"
 
 
@@ -23,6 +24,7 @@ void ABuilder::BeginPlay()
 	UWorld* World = GetWorld();
 	Mode = Cast<AVinciMobaGameMode>(World->GetAuthGameMode());
 	VState = Cast<AVinciState>(World->GetGameState());
+	VState->BuilderBusy = true;
 	MaxX = VState->MapSize;
 	MaxY = VState->MapSize;
 	
@@ -41,16 +43,6 @@ void ABuilder::BeginPlay()
 	BuildState = EBuildEnum::BuildMidLane;
 }
 
-FIntVector ABuilder::ToIntV(FVector Vec)
-{
-	return FIntVector(FMath::RoundToInt(Vec.X), FMath::RoundToInt(Vec.Y), FMath::RoundToInt(Vec.Z));
-}
-
-FVector ABuilder::ToVec(FIntVector Vec)
-{
-	return FVector(Vec.X, Vec.Y, Vec.Z);
-}
-
 bool ABuilder::BuildLane(ALane* Lane, int CrossPointX, int CrossPointY)
 {
 	//int dx = MaxX - CrossPointX;
@@ -67,7 +59,7 @@ bool ABuilder::BuildLane(ALane* Lane, int CrossPointX, int CrossPointY)
 		Lane->AddDataBigger(GridPen, ETileType::LaneCenter);
 	}
 	float DistToCrossPoint = FMath::Sqrt(FVector::DistSquaredXY(FVector(CrossPointX, CrossPointY, 0), FVector(GridPen.X, GridPen.Y, 0)));
-	FIntVector Expected = Origin + ToIntV(DistToCrossPoint*Dir);
+	FIntVector Expected = Origin + VinciLib::ToIntV(DistToCrossPoint*Dir);
 	int DiffX = FMath::Abs(GridPen.X - Expected.X);
 	int DiffY = FMath::Abs(GridPen.Y - Expected.Y);
 
@@ -137,6 +129,10 @@ void ABuilder::AfterAdd()
 void ABuilder::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
+	if (VState->Phase != EPhase::Builder)
+	{
+		return;
+	}
 	if (BuildState == EBuildEnum::BuildMidLane)
 	{
 		bool bDone = BuildLane(MidLane, 0, 0);
@@ -146,7 +142,7 @@ void ABuilder::Tick( float DeltaTime )
 			BuildState = EBuildEnum::BuildLeftLane;
 		}
 	}
-	if (BuildState == EBuildEnum::BuildLeftLane)
+	else if (BuildState == EBuildEnum::BuildLeftLane)
 	{
 		bool bDone = BuildLane(LeftLane, MaxX * 1 / 2, -MaxX * 1 / 2);
 		if (bDone)
@@ -155,7 +151,7 @@ void ABuilder::Tick( float DeltaTime )
 			BuildState = EBuildEnum::BuildRightLane;
 		}
 	}
-	if (BuildState == EBuildEnum::BuildRightLane)
+	else if (BuildState == EBuildEnum::BuildRightLane)
 	{
 		bool bDone = BuildLane(RightLane, -MaxX * 1 / 2, MaxX * 1 / 2);
 		if (bDone)
@@ -166,7 +162,7 @@ void ABuilder::Tick( float DeltaTime )
 			GridPen.Y = -MaxY;
 		}
 	}
-	if (BuildState == EBuildEnum::BuildGrid)
+	else if (BuildState == EBuildEnum::BuildGrid)
 	{
 		if (DirY == 1)
 		{
@@ -190,7 +186,7 @@ void ABuilder::Tick( float DeltaTime )
 			}
 		}
 
-		FVector Pos = FVector(GridPen.X * Spacing, GridPen.Y * Spacing, 150);
+		FVector Pos = FVector(GridPen.X * Spacing, GridPen.Y * Spacing, 0);
 		
 		SetActorLocation(Pos);
 		ETileType LaneType = MidLane->GetData(GridPen.X, GridPen.Y);
@@ -205,10 +201,15 @@ void ABuilder::Tick( float DeltaTime )
 		if (LaneType == ETileType::Rock)
 		{
 			AVinciMobaGameMode* Mode = Cast<AVinciMobaGameMode>(GetWorld()->GetAuthGameMode());
-			GetWorld()->SpawnActor(Mode->RockClass, &Pos, &FRotator::ZeroRotator, FActorSpawnParameters());
+			AActor* Spawned = GetWorld()->SpawnActor(Mode->RockClass, &Pos, &FRotator::ZeroRotator, FActorSpawnParameters());
+			Spawned->SetFolderPath("Box");
 		}
 		GridPen.X += DirX;
 		GridPen.Y += DirY;
+	}
+	else if (BuildState == EBuildEnum::BuildDone)
+	{
+		VState->Phase = EPhase::Spawner;
 	}
 }
 

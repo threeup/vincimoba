@@ -5,6 +5,8 @@
 #include "ActorBase.h"
 #include "VinciMobaGameMode.generated.h"
 
+class AVinciState;
+
 UCLASS(minimalapi)
 class AVinciMobaGameMode : public AGameMode
 {
@@ -16,6 +18,8 @@ public:
 	AVinciMobaGameMode();
 
 	virtual void StartPlay() override;
+
+	virtual void Tick(float DeltaSeconds) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Classes)
 	TSubclassOf<class AActorBase> DefaultHeroClass;
@@ -32,6 +36,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Classes)
 	TSubclassOf<class AActor> LaneClass;
 
+	AVinciState* VState;
 };
 
 

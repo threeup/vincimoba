@@ -17,6 +17,10 @@ class VINCIMOBA_API ATeamController : public AAIController
 
 
 public:
+	FVector GetLocation();
 
 	TArray<AActorBase*> Members;
+
+	FIntVector HomeCoord;
+	FVector HomeLocation;
 };
